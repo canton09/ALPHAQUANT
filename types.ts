@@ -20,12 +20,23 @@ export interface StockAnalysis {
   trend: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
   riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
   sources: SourceLink[];
-  apiSuccess?: boolean; // 新增：是否成功连接API
-  realtimeData?: {      // 新增：API返回的真实数据
+  apiSuccess?: boolean;
+  isDataCorrupted?: boolean;
+  realtimeData?: {
     pe: number;
     pb: number;
     marketCap: number;
   };
+}
+
+// 新增：短线推荐股票的数据结构
+export interface ShortTermRecommendation {
+  code: string;
+  name: string;
+  currentPrice: string;
+  targetProfit: string; // e.g. ">3%"
+  reason: string; // Max 100 words
+  riskFactor: 'HIGH' | 'MEDIUM';
 }
 
 export interface ChatMessage {

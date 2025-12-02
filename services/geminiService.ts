@@ -1,10 +1,11 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { StockAnalysis, SourceLink } from "../types";
-import { fetchEastMoneyData } from "./eastMoneyService";
+import { StockAnalysis, SourceLink, ShortTermRecommendation } from "../types";
+import { fetchEastMoneyData, fetchActiveStocks, MarketStockItem } from "./eastMoneyService";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// Existing analyzeStock function...
 export const analyzeStock = async (stockCode: string): Promise<StockAnalysis> => {
   const model = "gemini-2.5-flash";
   
@@ -101,6 +102,7 @@ export const analyzeStock = async (stockCode: string): Promise<StockAnalysis> =>
       riskLevel: data.riskLevel || "MEDIUM",
       sources: sources,
       apiSuccess: !!eastMoneyData?.success,
+      isDataCorrupted: !!eastMoneyData?.isDataCorrupted,
       realtimeData: eastMoneyData ? {
         pe: eastMoneyData.pe,
         pb: eastMoneyData.pb,
@@ -111,5 +113,57 @@ export const analyzeStock = async (stockCode: string): Promise<StockAnalysis> =>
   } catch (error) {
     console.error("Gemini API Error:", error);
     throw error;
+  }
+};
+
+// New Function: Generate Top 5 Short Term Recommendations
+export const generateShortTermRecommendations = async (): Promise<ShortTermRecommendation[]> => {
+  // 1. Get raw active market data
+  const activeStocks = await fetchActiveStocks();
+  
+  if (activeStocks.length === 0) {
+    throw new Error("无法获取市场行情数据，无法进行推荐分析。");
+  }
+
+  // Limit to top 20 to avoid token limits
+  const topStocksStr = JSON.stringify(activeStocks.slice(0, 20));
+
+  const prompt = `
+    你是一个顶级的量化交易专家。以下是当前中国 A 股市场换手率最高、资金最活跃的股票列表数据 (JSON 格式):
+    
+    ${topStocksStr}
+
+    任务：
+    从中挑选 5 只你认为在未来 2 个交易日内，大概率能上涨超过 3% 的"超短线"金股。
+    选择标准：
+    1. 资金活跃度 (Turnover Rate) 高。
+    2. 趋势向上 (Change Percent 为正但不过热，或者有突破迹象)。
+    3. 结合你的知识库中对这些板块近期热点的理解。
+
+    输出格式要求：
+    返回一个纯 JSON 数组 (Array)，不要包含 Markdown。每个对象包含：
+    - code: 股票代码
+    - name: 股票名称
+    - currentPrice: 当前价格 (string)
+    - targetProfit: 预期收益 (e.g. ">3%" or "3-5%")
+    - riskFactor: "HIGH" 或 "MEDIUM" (短线通常风险较高)
+    - reason: 推荐理由，严格限制在 100 字以内，简明扼要地说明技术面或消息面逻辑。
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const text = response.text || "[]";
+    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    const recommendations: ShortTermRecommendation[] = JSON.parse(cleanText);
+    return recommendations.slice(0, 5); // Ensure exactly 5
+
+  } catch (error) {
+    console.error("Recommendation Generation Error:", error);
+    throw new Error("AI 分析推荐失败，请稍后重试。");
   }
 };

@@ -12,6 +12,15 @@ export interface EastMoneyData {
   isDataCorrupted?: boolean; // 新增：标记数据是否异常
 }
 
+export interface MarketStockItem {
+  code: string;
+  name: string;
+  price: number;
+  changePercent: number;
+  turnoverRate: number; // 换手率
+  volume: number;
+}
+
 // 辅助函数：根据股票代码判断市场ID
 // 1: 沪 (6开头), 0: 深 (0, 3开头)
 const getMarketId = (code: string): string => {
@@ -63,8 +72,6 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
     const d = spotRes.data;
     
     // 解析基础数据
-    // 注意：push2 接口通常返回直接数值（如 15.20），不需要除以100。
-    // 如果遇到 "-" 则解析为 0。
     const price = safeParseNumber(d.f43);
     const changePercent = safeParseNumber(d.f170);
     const pe = safeParseNumber(d.f162);
@@ -73,24 +80,16 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
     
     const marketCapBillion = Number((marketCapRaw / 100000000).toFixed(2));
 
-    // 数据校验逻辑
-    // 1. 价格必须大于0
-    // 2. 市值必须大于0 (对于退市或极小股票可能例外，但一般视为异常)
-    // 3. 名字不能为空或 "-"
     const isPriceInvalid = price <= 0;
     const isNameInvalid = !d.f58 || d.f58 === '-';
     
-    // 标记数据是否损坏
     const isDataCorrupted = isPriceInvalid || isNameInvalid;
 
     // 格式化 K 线数据
     let historyStr: string[] = [];
     if (klineRes && klineRes.data && klineRes.data.klines) {
-      // f51:日期, f53:收盘, f59:涨跌幅
-      // 格式: "2023-10-01,15.20,..."
       historyStr = klineRes.data.klines.map((k: string) => {
         const parts = k.split(',');
-        // 安全检查数组长度
         if (parts.length < 11) return "Data Error";
         return `Date:${parts[0]} Close:${parts[2]} Change:${parts[8]}%`; 
       });
@@ -105,7 +104,7 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
       pb: pb,
       marketCap: marketCapBillion,
       history: historyStr.slice(-5),
-      success: !isDataCorrupted, // 如果数据损坏，视为不成功，迫使前端使用AI兜底或显示警告
+      success: !isDataCorrupted,
       isDataCorrupted: isDataCorrupted
     };
 
@@ -125,3 +124,29 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
     };
   }
 };
+
+// 新增：获取市场活跃股票列表（用于推荐分析）
+// 获取沪深A股，按换手率(f8)倒序排列，取前30个。高换手率通常意味着资金活跃，适合短线。
+export const fetchActiveStocks = async (): Promise<MarketStockItem[]> => {
+  // f12:代码, f14:名称, f2:最新价, f3:涨跌幅, f8:换手率, f17:开盘价
+  // fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23 (沪深A股)
+  const listUrl = `https://4.push2.eastmoney.com/api/qt/clist/get?pn=1&pz=30&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f8&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23&fields=f12,f14,f2,f3,f8,f17`;
+
+  try {
+    const res = await fetch(listUrl).then(r => r.json());
+    if (res && res.data && res.data.diff) {
+      return res.data.diff.map((item: any) => ({
+        code: item.f12,
+        name: item.f14,
+        price: safeParseNumber(item.f2),
+        changePercent: safeParseNumber(item.f3),
+        turnoverRate: safeParseNumber(item.f8),
+        open: safeParseNumber(item.f17)
+      })).filter((s: MarketStockItem) => s.price > 0 && s.name !== '-');
+    }
+    return [];
+  } catch (e) {
+    console.error("Failed to fetch active stock list", e);
+    return [];
+  }
+}

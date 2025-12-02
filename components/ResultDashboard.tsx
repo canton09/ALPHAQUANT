@@ -33,16 +33,19 @@ const ResultDashboard: React.FC<ResultDashboardProps> = ({ data }) => {
       ? 'text-cyber-green border-cyber-green shadow-cyber-green/20' 
       : 'text-yellow-400 border-yellow-400 shadow-yellow-400/20';
 
+  // Check if API is healthy (Success AND No Corruption)
+  const isApiHealthy = data.apiSuccess && !data.isDataCorrupted;
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-fadeIn">
       {/* Header Stat Block */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* API Status Card (New) */}
-        <div className="col-span-1 md:col-span-4 flex items-center justify-between bg-cyber-dark border border-gray-800 px-4 py-2 rounded">
+        {/* API Status Card */}
+        <div className={`col-span-1 md:col-span-4 flex items-center justify-between border px-4 py-2 rounded ${isApiHealthy ? 'bg-cyber-dark border-gray-800' : 'bg-red-900/20 border-red-500/50'}`}>
            <div className="flex items-center space-x-2">
-             <span className={`w-2 h-2 rounded-full ${data.apiSuccess ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></span>
-             <span className="text-xs font-mono text-gray-400">
-               数据通道: {data.apiSuccess ? '东方财富 API 直连 (ACTIVE)' : 'AI 搜索引擎 (FALLBACK)'}
+             <span className={`w-2 h-2 rounded-full animate-pulse ${isApiHealthy ? 'bg-green-500' : 'bg-red-500'}`}></span>
+             <span className={`text-xs font-mono ${isApiHealthy ? 'text-gray-400' : 'text-red-400 font-bold'}`}>
+               数据通道: {isApiHealthy ? '东方财富 API 直连 (ACTIVE)' : '数据异常 (API CONNECTION FAILED/CORRUPTED)'}
              </span>
            </div>
            <span className="text-xs font-mono text-gray-600">LATENCY: 45ms</span>
@@ -57,8 +60,8 @@ const ResultDashboard: React.FC<ResultDashboardProps> = ({ data }) => {
           )}
         </div>
         
-        {/* Real Data Metrics (Only show if API success) */}
-        {data.realtimeData ? (
+        {/* Real Data Metrics (Only show if API healthy) */}
+        {isApiHealthy && data.realtimeData ? (
           <div className="cyber-border p-4 flex flex-col justify-center space-y-2">
              <div className="flex justify-between items-center border-b border-gray-800 pb-1">
                <span className="text-gray-500 text-xs">市盈率 (PE)</span>
@@ -74,9 +77,13 @@ const ResultDashboard: React.FC<ResultDashboardProps> = ({ data }) => {
              </div>
           </div>
         ) : (
-          <div className="cyber-border p-6 flex flex-col justify-center items-center">
-            <h2 className="text-gray-400 text-xs font-mono tracking-widest mb-1">基本面数据</h2>
-            <div className="text-gray-600 text-xs text-center">API 数据不可用<br/>仅供参考</div>
+          <div className="cyber-border p-6 flex flex-col justify-center items-center relative overflow-hidden">
+            {/* Warning Overlay */}
+            <div className="absolute inset-0 bg-red-900/10 flex flex-col items-center justify-center p-2">
+              <span className="text-red-500 font-bold text-xs font-mono mb-1 animate-pulse">DATA CORRUPTED</span>
+            </div>
+            <h2 className="text-gray-400 text-xs font-mono tracking-widest mb-1 opacity-50">基本面数据</h2>
+            <div className="text-gray-600 text-xs text-center opacity-50">API 异常<br/>无法显示</div>
           </div>
         )}
 
