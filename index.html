@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AlphaQuant - 智能AI股票投资分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'cyber-black': '#050505',
+              'cyber-dark': '#0a0a0f',
+              'cyber-blue': '#00f3ff',
+              'cyber-purple': '#bc13fe',
+              'cyber-green': '#0aff0a',
+              'cyber-red': '#ff003c',
+            },
+            fontFamily: {
+              mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+            },
+            animation: {
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'scan': 'scan 2s linear infinite',
+            },
+            keyframes: {
+              scan: {
+                '0%': { transform: 'translateY(-100%)' },
+                '100%': { transform: 'translateY(100%)' },
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        background-color: #050505;
+        color: #e0e0e0;
+      }
+      .cyber-border {
+        position: relative;
+        background: rgba(10, 10, 15, 0.8);
+        border: 1px solid rgba(0, 243, 255, 0.2);
+        box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+      }
+      .cyber-border::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 10px;
+        height: 10px;
+        border-top: 2px solid #00f3ff;
+        border-left: 2px solid #00f3ff;
+      }
+      .cyber-border::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 10px;
+        height: 10px;
+        border-bottom: 2px solid #00f3ff;
+        border-right: 2px solid #00f3ff;
+      }
+      .neon-text {
+        text-shadow: 0 0 5px rgba(0, 243, 255, 0.5), 0 0 10px rgba(0, 243, 255, 0.3);
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0a0a0f; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1a1a2e; 
+        border: 1px solid #00f3ff;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
