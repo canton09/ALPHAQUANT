@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 
 interface StockSearchProps {
   onSearch: (code: string) => void;
-  onRecommend: () => void; // New prop
+  onRecommend: () => void;
   isLoading: boolean;
 }
 
@@ -18,55 +17,58 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, onRecommend, isLoad
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto mb-10 relative z-10 flex flex-col items-center gap-4">
-      {/* Search Bar */}
+    <div className="w-full max-w-4xl mx-auto mb-12 relative z-10 flex flex-col items-center gap-6 animate-slideUp">
+      {/* Search Bar Container */}
       <form onSubmit={handleSubmit} className="relative group w-full">
-        <div className="absolute -inset-1 bg-gradient-to-r from-cyber-blue to-cyber-purple rounded opacity-25 group-hover:opacity-75 blur transition duration-1000 group-hover:duration-200"></div>
-        <div className="relative flex items-center bg-cyber-dark border border-gray-800 rounded-lg p-1">
-          <span className="pl-4 text-cyber-blue font-mono text-xl select-none">CN-</span>
+        {/* Glow Effect */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-cyber-blue via-cyber-purple to-cyber-blue rounded-lg opacity-30 group-hover:opacity-60 blur-md transition duration-500"></div>
+        
+        <div className="relative flex items-center bg-black border border-gray-700 rounded-lg p-1.5 shadow-2xl">
+          <div className="pl-4 pr-2 text-cyber-blue font-mono text-xl select-none font-bold">CN:</div>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="请输入股票代码 (如: 600519)"
-            className="flex-1 bg-transparent text-white p-3 focus:outline-none font-mono tracking-wider placeholder-gray-600 uppercase"
+            placeholder="输入代码 (如: 600519)"
+            className="flex-1 bg-transparent text-white p-3 focus:outline-none font-mono text-lg tracking-wider placeholder-gray-600 uppercase"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading}
-            className={`px-6 py-3 rounded text-sm font-bold tracking-widest uppercase transition-all duration-300
+            className={`px-8 py-3 rounded-md text-sm font-black tracking-widest uppercase transition-all duration-300 border border-transparent
               ${isLoading 
                 ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
-                : 'bg-cyber-blue/10 text-cyber-blue hover:bg-cyber-blue hover:text-black shadow-[0_0_10px_rgba(0,243,255,0.3)] hover:shadow-[0_0_20px_rgba(0,243,255,0.6)]'
+                : 'bg-cyber-blue text-black hover:bg-white hover:shadow-[0_0_20px_rgba(0,243,255,0.6)]'
               }`}
           >
-            {isLoading ? '分析中...' : '开始分析'}
+            {isLoading ? 'ANALYZING...' : '立即分析'}
           </button>
         </div>
       </form>
 
-      {/* Action Buttons Row */}
+      {/* Action Buttons Row - Highlighting the New Feature */}
       <div className="flex w-full justify-center">
         <button
           onClick={onRecommend}
           disabled={isLoading}
           className={`
-            group relative px-8 py-3 overflow-hidden rounded bg-cyber-dark border border-cyber-purple/50 text-cyber-purple font-bold tracking-wider uppercase transition-all
-            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:border-cyber-purple hover:shadow-[0_0_15px_rgba(188,19,254,0.4)]'}
+            group relative px-10 py-4 overflow-hidden rounded-full bg-transparent border-2 border-cyber-purple text-white font-bold tracking-widest uppercase transition-all duration-300 w-full max-w-md
+            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[0_0_30px_rgba(188,19,254,0.4)] hover:scale-105'}
           `}
         >
-          <span className="relative z-10 flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            获取超短线金股推荐 (AI 选股)
+          <div className="absolute inset-0 w-full h-full bg-cyber-purple/10 group-hover:bg-cyber-purple/20 transition-all duration-300"></div>
+          <span className="relative z-10 flex items-center justify-center">
+            <span className="mr-2 text-2xl animate-pulse">⚡</span>
+            <span>获取 AI 超短线金股推荐 (Top 5)</span>
           </span>
-          <div className="absolute inset-0 h-full w-full scale-0 rounded transition-all duration-300 group-hover:scale-100 group-hover:bg-cyber-purple/10"></div>
         </button>
       </div>
 
-      <div className="mt-2 text-xs text-gray-500 font-mono text-center flex justify-between px-2 w-full max-w-2xl">
-        <span>数据源: 东方财富 (EAST MONEY)</span>
-        <span>系统状态: 在线 (ONLINE)</span>
+      <div className="flex justify-between w-full max-w-3xl text-[10px] text-gray-500 font-mono px-4">
+        <span>DATA STREAM: <span className="text-cyber-green">ACTIVE</span></span>
+        <span>LATENCY: <span className="text-cyber-blue">12ms</span></span>
+        <span>SECURITY: <span className="text-cyber-purple">ENCRYPTED</span></span>
       </div>
     </div>
   );
