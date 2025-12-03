@@ -1,15 +1,12 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import StockSearch from './components/StockSearch';
 import ResultDashboard from './components/ResultDashboard';
 import RecommendationList from './components/RecommendationList';
 import LoadingOverlay from './components/LoadingOverlay';
-import ApiKeyInput from './components/ApiKeyInput';
 import { StockAnalysis, ShortTermRecommendation } from './types';
-import { analyzeStock, generateShortTermRecommendations } from './services/deepseekService';
+import { analyzeStock, generateShortTermRecommendations } from './services/geminiService';
 
 const App: React.FC = () => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<StockAnalysis | null>(null);
   const [recommendations, setRecommendations] = useState<ShortTermRecommendation[] | null>(null);
   
@@ -17,28 +14,7 @@ const App: React.FC = () => {
   const [loadingMode, setLoadingMode] = useState<'single' | 'multi'>('single');
   const [error, setError] = useState<string | null>(null);
 
-  // Check for existing key on mount
-  useEffect(() => {
-    const storedKey = localStorage.getItem('deepseek_api_key');
-    if (storedKey) {
-      setApiKey(storedKey);
-    }
-  }, []);
-
-  const handleSaveKey = (key: string) => {
-    localStorage.setItem('deepseek_api_key', key);
-    setApiKey(key);
-  };
-
-  const handleClearKey = () => {
-    localStorage.removeItem('deepseek_api_key');
-    setApiKey(null);
-    setAnalysisData(null);
-    setRecommendations(null);
-  };
-
   const handleSearch = async (stockCode: string) => {
-    if (!apiKey) return;
     setLoading(true);
     setLoadingMode('single');
     setError(null);
@@ -46,22 +22,17 @@ const App: React.FC = () => {
     setRecommendations(null);
     
     try {
-      const result = await analyzeStock(stockCode, apiKey);
+      // API Key is handled internally by the service via process.env.API_KEY
+      const result = await analyzeStock(stockCode);
       setAnalysisData(result);
     } catch (err: any) {
-      if (err.message && err.message.includes("401")) {
-        setError("API Key 无效或已过期，请重新设置。");
-        handleClearKey(); // Force re-entry
-      } else {
-        setError("无法获取该股票数据，请检查代码或稍后重试。错误: " + err.message);
-      }
+      setError("无法获取该股票数据，请检查代码或稍后重试。错误: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleRecommend = async () => {
-    if (!apiKey) return;
     setLoading(true);
     setLoadingMode('multi');
     setError(null);
@@ -69,15 +40,10 @@ const App: React.FC = () => {
     setRecommendations(null);
 
     try {
-      const results = await generateShortTermRecommendations(apiKey);
+      const results = await generateShortTermRecommendations();
       setRecommendations(results);
     } catch (err: any) {
-        if (err.message && err.message.includes("401")) {
-            setError("API Key 无效或已过期，请重新设置。");
-            handleClearKey();
-        } else {
-            setError(err.message || "无法生成推荐列表，请检查网络连接。");
-        }
+      setError(err.message || "无法生成推荐列表，请检查网络连接。");
     } finally {
       setLoading(false);
     }
@@ -92,37 +58,25 @@ const App: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
       </div>
 
-      {!apiKey && <ApiKeyInput onSave={handleSaveKey} />}
-
       <div className="relative z-10 container mx-auto px-4 py-8">
         
         {/* Header */}
         <header className="mb-12 text-center relative">
            <div className="absolute top-0 right-0 flex items-center space-x-3">
-              {apiKey && (
-                  <div className="hidden md:flex items-center px-3 py-1 rounded-full border border-cyber-green/30 bg-cyber-green/10">
-                      <span className="relative flex h-2 w-2 mr-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-cyber-green"></span>
-                      </span>
-                      <span className="text-[10px] text-cyber-green font-mono font-bold tracking-wider">DEEPSEEK V3.2 ACTIVE</span>
-                  </div>
-              )}
-              {apiKey && (
-                <button 
-                  onClick={handleClearKey}
-                  className="text-[10px] text-gray-600 hover:text-cyber-red border border-gray-800 hover:border-cyber-red px-2 py-1 rounded font-mono transition-colors"
-                >
-                  RESET KEY
-                </button>
-              )}
+              <div className="hidden md:flex items-center px-3 py-1 rounded-full border border-cyber-green/30 bg-cyber-green/10">
+                  <span className="relative flex h-2 w-2 mr-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyber-green"></span>
+                  </span>
+                  <span className="text-[10px] text-cyber-green font-mono font-bold tracking-wider">GEMINI API ACTIVE</span>
+              </div>
            </div>
 
           <h1 className="text-5xl md:text-6xl font-black mb-2 tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-600 cursor-pointer hover:text-white transition-colors" onClick={() => window.location.reload()}>
             ALPHA<span className="text-cyber-blue">QUANT</span>
           </h1>
           <p className="text-cyber-blue/80 font-mono tracking-widest text-sm md:text-base">
-            智能 AI 股票投资决策系统 (DeepSeek V3.2 Powered)
+            智能 AI 股票投资决策系统 (Powered by Google Gemini 2.5)
           </p>
         </header>
 
@@ -131,7 +85,6 @@ const App: React.FC = () => {
           onSearch={handleSearch} 
           onRecommend={handleRecommend}
           isLoading={loading} 
-          hasKey={!!apiKey}
         />
 
         {/* Content Area */}
@@ -158,7 +111,7 @@ const App: React.FC = () => {
               </div>
               <p className="font-mono text-sm tracking-widest">AWAITING INPUT COMMAND...</p>
               <p className="text-xs text-gray-700 mt-2">
-                {apiKey ? '系统就绪，请输入代码' : '等待密钥输入...'}
+                系统就绪，请输入代码
               </p>
             </div>
           )}
@@ -170,9 +123,9 @@ const App: React.FC = () => {
           <p className="max-w-3xl mx-auto leading-relaxed">
             本应用利用人工智能技术聚合分析东方财富网等公开财经资讯。
             所有生成内容仅供参考，不构成任何投资建议。
-            股市有风险，入市需谨慎。DeepSeek 模型可能会产生幻觉，请在投资前务必进行独立核实。
+            股市有风险，入市需谨慎。Gemini 模型可能会产生幻觉，请在投资前务必进行独立核实。
           </p>
-          <p className="mt-4 font-mono">v1.3.0-ds // CONNECTED TO DEEPSEEK V3.2</p>
+          <p className="mt-4 font-mono">v2.0.0-gemini // POWERED BY GOOGLE GENAI</p>
         </footer>
       </div>
     </div>
