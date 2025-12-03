@@ -39,22 +39,14 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
   const marketId = getMarketId(stockCode);
   const secId = `${marketId}.${stockCode}`;
   
-  // 1. 获取实时行情 (Spot Data)
-  // f43:最新价, f57:代码, f58:名称, f162:市盈率(动), f167:市净率, f170:涨跌幅, f116:总市值
-  const spotUrl = `https://push2.eastmoney.com/api/qt/stock/get?secid=${secId}&fields=f43,f57,f58,f162,f167,f170,f116&invt=2&fltt=2&fid=f43&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048`;
-
-  // 2. 获取K线数据 (History Data) - 最近30天日K
-  const klineUrl = `https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=${secId}&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61&klt=101&fqt=1&end=20500101&lmt=30`;
+  // Use Vercel API Proxy to avoid CORS
+  const apiUrl = `/api/stock?secid=${secId}`;
 
   try {
-    const [spotRes, klineRes] = await Promise.all([
-      fetch(spotUrl).then(r => r.json()),
-      fetch(klineUrl).then(r => r.json())
-    ]);
+    const res = await fetch(apiUrl).then(r => r.json());
 
-    // 检查 Spot 数据是否有效
-    if (!spotRes || !spotRes.data) {
-      console.warn("East Money API: No spot data found");
+    if (!res || !res.spot || !res.spot.data) {
+      console.warn("API Proxy: No spot data found");
       return {
         name: "Unknown",
         code: stockCode,
@@ -69,7 +61,7 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
       };
     }
 
-    const d = spotRes.data;
+    const d = res.spot.data;
     
     // 解析基础数据
     const price = safeParseNumber(d.f43);
@@ -87,8 +79,8 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
 
     // 格式化 K 线数据
     let historyStr: string[] = [];
-    if (klineRes && klineRes.data && klineRes.data.klines) {
-      historyStr = klineRes.data.klines.map((k: string) => {
+    if (res.kline && res.kline.data && res.kline.data.klines) {
+      historyStr = res.kline.data.klines.map((k: string) => {
         const parts = k.split(',');
         if (parts.length < 11) return "Data Error";
         return `Date:${parts[0]} Close:${parts[2]} Change:${parts[8]}%`; 
@@ -109,7 +101,7 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
     };
 
   } catch (error) {
-    console.error("East Money API Fetch Error:", error);
+    console.error("API Fetch Error:", error);
     return {
       name: "Error",
       code: stockCode,
@@ -126,14 +118,12 @@ export const fetchEastMoneyData = async (stockCode: string): Promise<EastMoneyDa
 };
 
 // 新增：获取市场活跃股票列表（用于推荐分析）
-// 获取沪深A股，按换手率(f8)倒序排列，取前30个。高换手率通常意味着资金活跃，适合短线。
 export const fetchActiveStocks = async (): Promise<MarketStockItem[]> => {
-  // f12:代码, f14:名称, f2:最新价, f3:涨跌幅, f8:换手率, f17:开盘价
-  // fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23 (沪深A股)
-  const listUrl = `https://4.push2.eastmoney.com/api/qt/clist/get?pn=1&pz=30&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f8&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23&fields=f12,f14,f2,f3,f8,f17`;
+  // Use Vercel API Proxy
+  const apiUrl = `/api/market`;
 
   try {
-    const res = await fetch(listUrl).then(r => r.json());
+    const res = await fetch(apiUrl).then(r => r.json());
     if (res && res.data && res.data.diff) {
       return res.data.diff.map((item: any) => ({
         code: item.f12,
@@ -146,7 +136,7 @@ export const fetchActiveStocks = async (): Promise<MarketStockItem[]> => {
     }
     return [];
   } catch (e) {
-    console.error("Failed to fetch active stock list", e);
+    console.error("Failed to fetch active stock list via proxy", e);
     return [];
   }
 }
