@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 
 interface StockSearchProps {
   onSearch: (code: string) => void;
   onRecommend: () => void;
   isLoading: boolean;
+  onResetKey: () => void;
 }
 
-const StockSearch: React.FC<StockSearchProps> = ({ onSearch, onRecommend, isLoading }) => {
+const StockSearch: React.FC<StockSearchProps> = ({ onSearch, onRecommend, isLoading, onResetKey }) => {
   const [input, setInput] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -65,10 +67,19 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, onRecommend, isLoad
         </button>
       </div>
 
-      <div className="flex justify-between w-full max-w-3xl text-[10px] text-gray-500 font-mono px-4">
+      <div className="flex justify-between items-center w-full max-w-3xl text-[10px] text-gray-500 font-mono px-4">
         <span>DATA STREAM: <span className="text-cyber-green">ACTIVE</span></span>
-        <span>LATENCY: <span className="text-cyber-blue">24ms</span></span>
-        <span>PROVIDER: <span className="text-cyber-green font-bold">GEMINI 2.5 FLASH</span></span>
+        
+        {/* Reset Key Button */}
+        <button 
+          onClick={onResetKey}
+          className="flex items-center space-x-2 text-gray-500 hover:text-cyber-blue transition-colors group cursor-pointer"
+        >
+           <svg className="w-3 h-3 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+           <span>CHANGE API KEY</span>
+        </button>
+
+        <span>PROVIDER: <span className="text-cyber-green font-bold">DEEPSEEK V3</span></span>
       </div>
     </div>
   );
