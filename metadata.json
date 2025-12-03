@@ -1,5 +1,5 @@
 {
-  "name": "AlphaQuant - China Stock AI Analyst",
+  "name": "AlphaQuant - 股票投资决策系统",
   "description": "A high-tech, sci-fi themed financial advisor interface that uses AI to analyze Chinese stocks via East Money (东方财富) data streams, providing summaries and trading signals.",
   "requestFramePermissions": []
 }

@@ -6,7 +6,7 @@ import RecommendationList from './components/RecommendationList';
 import LoadingOverlay from './components/LoadingOverlay';
 import ApiKeyInput from './components/ApiKeyInput';
 import { StockAnalysis, ShortTermRecommendation } from './types';
-import { analyzeStock, generateShortTermRecommendations } from './services/geminiService'; // Logic is now DeepSeek
+import { analyzeStock, generateShortTermRecommendations } from './services/deepseekService';
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
