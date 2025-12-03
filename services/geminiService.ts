@@ -2,8 +2,17 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { fetchEastMoneyData, fetchActiveStocks } from "./eastMoneyService";
 import { StockAnalysis, ShortTermRecommendation } from "../types";
 
-// Initialize Gemini client with API Key from process.env
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to get AI client lazily. This prevents "process is not defined" or API Key missing errors
+// from crashing the app immediately upon load.
+const getAiClient = () => {
+  // @ts-ignore - Vite defines this at build time
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("API Key configuration missing. Please check your Vercel Environment Variables.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export const analyzeStock = async (stockCode: string): Promise<StockAnalysis> => {
   let eastMoneyData = null;
@@ -42,6 +51,7 @@ export const analyzeStock = async (stockCode: string): Promise<StockAnalysis> =>
   `;
 
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
@@ -135,6 +145,7 @@ export const generateShortTermRecommendations = async (): Promise<ShortTermRecom
   `;
 
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
